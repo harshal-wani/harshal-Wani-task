@@ -7,6 +7,8 @@
    By type (e.g., Coin, Token).
    By status (Active/New).
 
+<img src="Screenshot/crypto-screenshot.png" width="300"/>
+
 ### Architecture
 MVVM-C architecture with Combine for data binding.
 
