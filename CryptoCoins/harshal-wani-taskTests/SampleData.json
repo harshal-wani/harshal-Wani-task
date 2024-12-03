@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Bitcoin",
+    "symbol": "BTC",
+    "is_new": false,
+    "is_active": true,
+    "type": "coin"
+  },
+  {
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "is_new": false,
+    "is_active": true,
+    "type": "token"
+  }
+]
