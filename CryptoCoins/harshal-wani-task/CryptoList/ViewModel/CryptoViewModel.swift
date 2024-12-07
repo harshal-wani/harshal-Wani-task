@@ -18,16 +18,21 @@ protocol CryptoListState {
 }
 
 protocol CryptoListListener {
-  var coinsPublisher: AnyPublisher<[CryptoItem], Never> { get }
   func search(for searchPhrase: String)
   func filterCoins(with filter: String, action: FilterAction, searchPhrase: String)
   func resetResult()
+  func didTapOnCoin(_ cryptoItem: CryptoItem)
+}
+
+protocol CryptoRouteable {
+  func routeToDetail(for cryptoItem: CryptoItem)
 }
 
 final class CryptoViewModel: CryptoListListener, CryptoListState {
   
   // MARK: - Dependencies
   private let dataProvider: CryptoDataProviding
+  private let router: CryptoRouteable
   
   // MARK: - Internal State
   private var cryptoCoins: [CryptoItem] = []
@@ -35,7 +40,8 @@ final class CryptoViewModel: CryptoListListener, CryptoListState {
   
   @Published private var filteredCoins: [CryptoItem] = []
   @Published private(set) var dataState: DataState = .loading
-  
+  @Published var searchPhrase: String = ""
+
   // MARK: - Combine Publishers
   var dataStatePublisher: AnyPublisher<DataState, Never> {
     $dataState.eraseToAnyPublisher()
@@ -56,9 +62,12 @@ final class CryptoViewModel: CryptoListListener, CryptoListState {
   private var cancellables: Set<AnyCancellable> = []
   
   // MARK: - Initialization
-  init(dataProvider: CryptoDataProviding) {
+  init(dataProvider: CryptoDataProviding, router: CryptoRouteable) {
     self.dataProvider = dataProvider
+    self.router = router
     fetchAndInitializeData()
+    bindCoinsPublisher()
+    bindSearchPhrasePublisher()
   }
   
   // MARK: - Data Fetching
@@ -68,7 +77,6 @@ final class CryptoViewModel: CryptoListListener, CryptoListState {
       do {
         try await dataProvider.fetchData()
         dataState = .success
-        bindCoinsPublisher()
       } catch {
         dataState = .error(error.localizedDescription)
       }
@@ -84,9 +92,20 @@ final class CryptoViewModel: CryptoListListener, CryptoListState {
       .store(in: &cancellables)
   }
   
+  private func bindSearchPhrasePublisher() {
+    $searchPhrase
+      .dropFirst()
+      .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+      .sink { [weak self] text in
+        self?.applyFilters(searchPhrase: text)
+      }
+      .store(in: &cancellables)
+  }
+  
+
   // MARK: - Public Methods
   func search(for searchPhrase: String) {
-    filteredCoins = searchPhrase.isEmpty ? cryptoCoins : filterCoinsBySearchPhrase(searchPhrase)
+    self.searchPhrase = searchPhrase
   }
   
   func filterCoins(with filter: String, action: FilterAction, searchPhrase: String) {
@@ -98,7 +117,12 @@ final class CryptoViewModel: CryptoListListener, CryptoListState {
     filteredCoins = cryptoCoins
   }
   
+  func didTapOnCoin(_ cryptoItem: CryptoItem) {
+    router.routeToDetail(for: cryptoItem)
+  }
+  
   // MARK: - Private Methods
+  
   private func filterCoinsBySearchPhrase(_ searchPhrase: String) -> [CryptoItem] {
     cryptoCoins.filter { $0.name.range(of: searchPhrase, options: .caseInsensitive) != nil }
   }

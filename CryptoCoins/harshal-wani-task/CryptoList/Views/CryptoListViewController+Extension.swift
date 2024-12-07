@@ -14,33 +14,32 @@ import UIKit
 extension CryptoListViewController {
   
   func setObservers() {
-    NotificationCenter.default.addObserver(self, selector: #selector(keyboardShow(_:)),
-                                           name: UIWindow.keyboardWillShowNotification, object: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(keyboardHide(_:)),
-                                           name: UIWindow.keyboardWillHideNotification, object: nil)
+    let notificationCenter = NotificationCenter.default
+    notificationCenter.addObserver(self, selector: #selector(handleKeyboardEvent(_:)),
+                                   name: UIWindow.keyboardWillShowNotification, object: nil)
+    notificationCenter.addObserver(self, selector: #selector(handleKeyboardEvent(_:)),
+                                   name: UIWindow.keyboardWillHideNotification, object: nil)
   }
   
-  @objc func keyboardShow(_ notification: Notification) {
-    if let keyboardFrame: NSValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
-      let keyboardRectangle = keyboardFrame.cgRectValue
-      let keyboardHeight = keyboardRectangle.height
-      var contentInset = UIEdgeInsets.zero
+  @objc private func handleKeyboardEvent(_ notification: Notification) {
+    guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {
+      return
+    }
+    
+    let keyboardRectangle = keyboardFrame.cgRectValue
+    let keyboardHeight = keyboardRectangle.height
+    
+    var contentInset = UIEdgeInsets.zero
+    
+    if notification.name == UIWindow.keyboardWillShowNotification {
       contentInset.bottom = keyboardHeight
-      tableView.contentInset = contentInset
+    } else if notification.name == UIWindow.keyboardWillHideNotification {
+      let bottomSpace: CGFloat = view.safeAreaInsets.bottom > 0 ? 16.0 : 8.0
+      contentInset.bottom = max(view.safeAreaInsets.bottom + bottomSpace, 50)
     }
-  }
-  
-  @objc func keyboardHide(_ notification: Notification) {
-    if let keyboardFrame: NSValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
-      let keyboardRectangle = keyboardFrame.cgRectValue
-      let keyboardHeight = keyboardRectangle.height
-      var contentInset = UIEdgeInsets.zero
-      let bottomSpace: CGFloat = (view.safeAreaInsets.bottom) > 0 ? 16.0 : 8.0
-      contentInset.bottom =  view.safeAreaInsets.bottom + bottomSpace
-      if keyboardHeight < 50 { contentInset.bottom = 50 }
-      tableView.contentInset = contentInset
-      tableView.scrollIndicatorInsets = contentInset
-    }
+    
+    tableView.contentInset = contentInset
+    tableView.scrollIndicatorInsets = contentInset
   }
   
 }
@@ -49,6 +48,11 @@ extension CryptoListViewController {
 
 extension CryptoListViewController: UITableViewDelegate {
   
+  func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    tableView.deselectRow(at: indexPath, animated: true)
+    guard let item = listDataSource?.itemIdentifier(for: indexPath) else { return }
+    listener.didTapOnCoin(item)
+  }
 }
 
 // MARK: - UISearchController delegate
@@ -56,5 +60,11 @@ extension CryptoListViewController: UITableViewDelegate {
 extension CryptoListViewController: UISearchResultsUpdating {
   func updateSearchResults(for searchController: UISearchController) {
     listener.search(for: searchController.searchBar.text ?? "")
+  }
+}
+
+extension CryptoListViewController: FilterTagViewDelegate {
+  func didPressTag(tag: String, action: FilterAction) {
+    listener.filterCoins(with: tag, action: action, searchPhrase: searchController.searchBar.text ?? "")
   }
 }

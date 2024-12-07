@@ -34,13 +34,14 @@ final class CryptoDataProvider: CryptoDataProviding {
   }
   
   private let apiService: APIServiceProtocol
-  
+  private let localStorageKey = "cryptoCoins"
+  private let dataStorageManager: DataStorageProvinding
+
   // MARK: - Initializer
   
-  /// Initializes the data provider with the given API service.
-  /// - Parameter apiService: The service responsible for fetching data from the API.
-  init(apiService: APIServiceProtocol) {
+  init(apiService: APIServiceProtocol, dataStorageManager: DataStorageProvinding = UserDefaultsManager()) {
     self.apiService = apiService
+    self.dataStorageManager = dataStorageManager
   }
   
   // MARK: - Public Methods
@@ -49,9 +50,23 @@ final class CryptoDataProvider: CryptoDataProviding {
     do {
       let coins = try await apiService.fetch([CryptoItem].self, .getCryptoList())
       self.cryptoCoins = coins
+      saveOfflineData(coins)
     } catch {
+      loadOfflineData()
       throw error
     }
+  }
+  
+  // MARK: - Offline Data Handling
+    
+  private func saveOfflineData(_ coins: [CryptoItem]) {
+    self.dataStorageManager.store(coins, forKey: localStorageKey)
+  }
+  
+  private func loadOfflineData() {
+    guard let data: [CryptoItem] = self.dataStorageManager.retrive([CryptoItem].self, key: localStorageKey) else { return }
+    self.cryptoCoins = data
+
   }
 }
 

@@ -9,17 +9,22 @@ import UIKit
 import TagListView
 import SnapKit
 
+
+protocol FilterTagViewDelegate: AnyObject {
+  func didPressTag( tag: String, action: FilterAction)
+}
+
 final class FilterTagView: UIView {
   
   // MARK: Properties
-  
-  var tagPress: ((String, FilterAction) -> Void)?
-  
+    
   var tags: [String] = [] {
     didSet {
       tagView.addTags(tags)
     }
   }
+  
+  weak var delegate: FilterTagViewDelegate?
   
   // MARK: - UI Elements
   
@@ -81,7 +86,7 @@ extension FilterTagView: TagListViewDelegate {
     
     let action: FilterAction = isSelected ? .remove : .add
     reloadTags()
-    tagPress?(title.replacingOccurrences(of: " ✅", with: ""), action)
+    delegate?.didPressTag(tag: title.replacingOccurrences(of: " ✅", with: ""), action: action)
   }
   
   private func reloadTags() {

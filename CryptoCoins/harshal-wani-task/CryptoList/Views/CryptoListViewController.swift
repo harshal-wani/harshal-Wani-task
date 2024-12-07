@@ -21,7 +21,7 @@ final class CryptoListViewController: UIViewController {
   
   // MARK: - Properties
   
-  private var listDataSource: DataSource!
+  private(set) var listDataSource: DataSource?
   private var cancellables: Set<AnyCancellable> = []
   
   private let state: CryptoListState
@@ -61,7 +61,7 @@ final class CryptoListViewController: UIViewController {
     return tableView
   }()
   
-  private lazy var searchController: UISearchController = {
+  private(set) lazy var searchController: UISearchController = {
     let searchController = UISearchController(searchResultsController: nil)
     searchController.searchBar.placeholder = "Search"
     searchController.hidesNavigationBarDuringPresentation = true
@@ -69,7 +69,11 @@ final class CryptoListViewController: UIViewController {
     return searchController
   }()
   
-  private lazy var tagView: FilterTagView = FilterTagView()
+  private lazy var tagView: FilterTagView = {
+  let tagView = FilterTagView()
+    tagView.delegate = self
+    return tagView
+  }()
   
   private lazy var noRecordsView: UIView = {
     let view = UIView()
@@ -93,7 +97,6 @@ final class CryptoListViewController: UIViewController {
     setupUI()
     setupSearchBar()
     setupDataSource()
-    setupTagObserver()
   }
   
   // MARK: - Setup Methods
@@ -139,29 +142,30 @@ final class CryptoListViewController: UIViewController {
     state.dataStatePublisher
       .receive(on: DispatchQueue.main)
       .sink { [weak self] state in
-        self?.handleDataState(state)
+        guard let self else { return }
+        self.handleDataState(state)
       }
       .store(in: &cancellables)
     
-    state.filterTagsPublisher
+    
+    Publishers.CombineLatest(state.coinsPublisher.first(),
+                             state.filterTagsPublisher.first())
       .receive(on: DispatchQueue.main)
-      .sink { [weak self] tags in
-        self?.tagView.tags = tags
-      }
-      .store(in: &cancellables)
+      .sink { [weak self] coins, tags in
+        guard let self else { return }
+        let uniqueTags = Array(Set(tags))
+                self.tagView.tags = uniqueTags
+                self.tagView.isHidden = uniqueTags.isEmpty
+      }.store(in: &cancellables)
+    
     
     state.coinsPublisher
       .receive(on: DispatchQueue.main)
       .sink { [weak self] coins in
-        self?.updateTable(with: coins)
+        guard let self else { return }
+        self.updateTable(with: coins)
       }
       .store(in: &cancellables)
-  }
-  
-  private func setupTagObserver() {
-    tagView.tagPress = { [unowned self] text, action in
-      listener.filterCoins(with: text, action: action, searchPhrase: searchController.searchBar.text ?? "")
-    }
   }
   
   // MARK: - Update Methods
@@ -170,7 +174,7 @@ final class CryptoListViewController: UIViewController {
     var snapshot = Snapshot()
     snapshot.appendSections([CryptoSection.main])
     snapshot.appendItems(coins)
-    listDataSource.apply(snapshot, animatingDifferences: true)
+    listDataSource?.apply(snapshot, animatingDifferences: true)
     updateTableViewBackground(isEmpty: coins.isEmpty)
   }
   
@@ -188,7 +192,6 @@ final class CryptoListViewController: UIViewController {
       loaderView.stopAnimating()
     case .error(let message):
       loaderView.stopAnimating()
-      tagView.isHidden = true
       updateTableViewBackground(isEmpty: true)
       showError(message)
     }

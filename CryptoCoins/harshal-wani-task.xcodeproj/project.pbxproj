@@ -36,6 +36,7 @@
 				Common/Enums.swift,
 				CryptoList/CryptoDataProvider.swift,
 				CryptoList/Model/CryptoItem.swift,
+				CryptoList/UserDefaultsManager.swift,
 				CryptoList/ViewModel/CryptoViewModel.swift,
 				Services/APIService.swift,
 				Services/APIServiceError.swift,

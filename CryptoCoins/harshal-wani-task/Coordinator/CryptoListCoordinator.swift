@@ -18,9 +18,17 @@ final class CryptoListCoordinator: Coordinator {
 
     func start() {
       let dataProvider = CryptoDataProvider(apiService: APIService.shared)
-      let viewModel = CryptoViewModel(dataProvider: dataProvider)
+      let viewModel = CryptoViewModel(dataProvider: dataProvider, router: self)
       let listViewController = CryptoListViewController(viewModel: viewModel)
       self.listViewController = listViewController
       presenter.pushViewController(listViewController, animated: true)
     }
+}
+
+extension CryptoListCoordinator: CryptoRouteable {
+  
+  func routeToDetail(for cryptoItem: CryptoItem) {
+    let detailCoordinator = CryptoDetailCoordinator(presenter: presenter, cryptoItem: cryptoItem)
+    detailCoordinator.start()
+  }
 }
