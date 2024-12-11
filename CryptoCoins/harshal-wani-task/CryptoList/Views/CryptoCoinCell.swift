@@ -83,14 +83,14 @@ final class CryptoCoinCell: UITableViewCell {
     labelStackView.spacing = 8
     
     // Image Constraints
-    coinImageView.snp.makeConstraints { make in
-      make.width.height.equalTo(40)
+    coinImageView.snp.makeConstraints {
+      $0.width.height.equalTo(40)
     }
-    newImageView.snp.makeConstraints { make in
-      make.width.height.equalTo(20)
+    newImageView.snp.makeConstraints {
+      $0.width.height.equalTo(20)
     }
-    emptyView.snp.makeConstraints { make in
-      make.height.equalTo(15)
+    emptyView.snp.makeConstraints {
+      $0.height.equalTo(15)
     }
     
     // Icon StackView
@@ -107,8 +107,8 @@ final class CryptoCoinCell: UITableViewCell {
     contentView.addSubview(rootStackView)
     
     // Root StackView Constraints
-    rootStackView.snp.makeConstraints { make in
-      make.edges.equalToSuperview().inset(8)
+    rootStackView.snp.makeConstraints {
+      $0.edges.equalToSuperview().inset(8)
     }
   }
   

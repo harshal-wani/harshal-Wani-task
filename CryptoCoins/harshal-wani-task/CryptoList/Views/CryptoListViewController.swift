@@ -107,18 +107,18 @@ final class CryptoListViewController: UIViewController {
     view.addSubview(tableView)
     view.addSubview(loaderView)
     
-    tagView.snp.makeConstraints { make in
-      make.top.equalTo(view.safeAreaLayoutGuide)
-      make.left.right.equalToSuperview()
+    tagView.snp.makeConstraints {
+      $0.top.equalTo(view.safeAreaLayoutGuide)
+      $0.left.right.equalToSuperview()
     }
     
-    tableView.snp.makeConstraints { make in
-      make.top.equalTo(tagView.snp.bottom)
-      make.left.right.bottom.equalToSuperview()
+    tableView.snp.makeConstraints {
+      $0.top.equalTo(tagView.snp.bottom)
+      $0.left.right.bottom.equalToSuperview()
     }
     
-    loaderView.snp.makeConstraints { make in
-      make.center.equalToSuperview()
+    loaderView.snp.makeConstraints {
+      $0.center.equalToSuperview()
     }
   }
   

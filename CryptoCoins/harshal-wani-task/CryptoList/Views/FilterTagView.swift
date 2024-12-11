@@ -11,17 +11,17 @@ import SnapKit
 
 
 protocol FilterTagViewDelegate: AnyObject {
-  func didPressTag( tag: String, action: FilterAction)
+  func didPressTag(tag: String, action: FilterAction)
 }
 
 final class FilterTagView: UIView {
   
-  // MARK: Properties
-    
+  // MARK: - Properties
+  
+  private let selectedTick = "✅"
+  
   var tags: [String] = [] {
-    didSet {
-      tagView.addTags(tags)
-    }
+    didSet { updateTags() }
   }
   
   weak var delegate: FilterTagViewDelegate?
@@ -29,69 +29,72 @@ final class FilterTagView: UIView {
   // MARK: - UI Elements
   
   private lazy var rootView: UIView = {
-    let rootView = UIView()
-    rootView.backgroundColor = .systemGray6
-    return rootView
+    let view = UIView()
+    view.backgroundColor = .systemGray6
+    return view
   }()
   
-  private(set) lazy var tagView: TagListView = {
-    let tagView = TagListView()
-    tagView.textFont = UIFont.systemFont(ofSize: 16, weight: .medium)
-    tagView.alignment = .leading
-    tagView.minimumContentSizeCategory = .medium
-    tagView.delegate = self
-    tagView.cornerRadius = 10
-    tagView.textColor = .white
-    tagView.backgroundColor = .systemGray6
-    tagView.paddingX = 16
-    tagView.paddingY = 12
-    tagView.marginX = 16
-    tagView.marginY = 12
-    return tagView
+  private lazy var tagView: TagListView = {
+    let view = TagListView()
+    view.textFont = .systemFont(ofSize: 16, weight: .medium)
+    view.alignment = .leading
+    view.minimumContentSizeCategory = .medium
+    view.delegate = self
+    view.cornerRadius = 10
+    view.textColor = .white
+    view.backgroundColor = .systemGray6
+    view.paddingX = 16
+    view.paddingY = 12
+    view.marginX = 16
+    view.marginY = 12
+    return view
   }()
   
-  // MARK: Initializer
+  // MARK: - Initializers
   
-  init() {
-    super.init(frame: .zero)
-    self.setupView()
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    setupView()
   }
   
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
   
+  // MARK: - Setup Methods
+  
   private func setupView() {
-    self.addSubview(rootView)
+    addSubview(rootView)
     rootView.addSubview(tagView)
     
-    rootView.snp.makeConstraints { make in
-      make.edges.equalToSuperview()
+    rootView.snp.makeConstraints {
+      $0.edges.equalToSuperview()
     }
-    tagView.snp.makeConstraints { make in
-      make.edges.equalToSuperview().inset(16)
+    tagView.snp.makeConstraints {
+      $0.edges.equalToSuperview().inset(16)
     }
+  }
+  
+  private func updateTags() {
+    tagView.removeAllTags()
+    tagView.addTags(tags)
   }
 }
 
-// MARK: TagListView Delegate
+// MARK: - TagListViewDelegate
 
 extension FilterTagView: TagListViewDelegate {
   
   func tagPressed(_ title: String, tagView: TagView, sender: TagListView) {
     guard let index = tags.firstIndex(of: title) else { return }
     
-    let isSelected = title.contains("✅")
-    tags[index] = isSelected ? title.replacingOccurrences(of: " ✅", with: "") : "\(title) ✅"
+    let isSelected = title.contains(selectedTick)
+    let cleanTitle = title.replacingOccurrences(of: " \(selectedTick)", with: "")
+    tags[index] = isSelected ? cleanTitle : "\(title) \(selectedTick)"
     
+    updateTags()
     let action: FilterAction = isSelected ? .remove : .add
-    reloadTags()
-    delegate?.didPressTag(tag: title.replacingOccurrences(of: " ✅", with: ""), action: action)
-  }
-  
-  private func reloadTags() {
-    tagView.removeAllTags()
-    tagView.addTags(tags)
+    delegate?.didPressTag(tag: cleanTitle, action: action)
   }
 }
 
